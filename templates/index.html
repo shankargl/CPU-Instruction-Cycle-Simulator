@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CPU Instruction Cycle Simulator | COA Lab</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <p class="eyebrow">COMPUTER ORGANIZATION & ARCHITECTURE</p>
+      <h1>CPU Instruction Cycle Simulator</h1>
+      <p class="subtitle">Explore Fetch → Decode → Execute, one phase at a time.</p>
+    </div>
+    <div class="top-chip"><span class="live-dot"></span> Interactive CPU Lab</div>
+  </header>
+
+  <main class="layout">
+    <section class="panel editor-panel">
+      <div class="section-heading">
+        <div><p class="eyebrow">01 / PROGRAM</p><h2>Instruction editor</h2></div>
+        <span class="tag">Custom assembly</span>
+      </div>
+      <label for="program">Program instructions</label>
+      <textarea id="program" spellcheck="false">LDI 10
+STORE 0
+LDI 5
+ADD 0
+STORE 1
+HALT</textarea>
+      <p class="hint">One instruction per line. Add comments with #. Program addresses start at 0.</p>
+      <label for="memoryInput">Initial data memory (16 integers, comma-separated)</label>
+      <input id="memoryInput" value="0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0">
+      <div class="button-row">
+        <button class="btn btn-primary" id="loadBtn">Load / Reset</button>
+        <button class="btn btn-secondary" id="exampleBtn">Load example</button>
+      </div>
+      <div class="instruction-reference">
+        <h3>Supported instructions</h3>
+        <div class="instruction-grid">
+          <span><b>LDI n</b> ACC ← n</span><span><b>LOAD a</b> ACC ← M[a]</span>
+          <span><b>STORE a</b> M[a] ← ACC</span><span><b>ADD a</b> ACC ← ACC + M[a]</span>
+          <span><b>SUB a</b> ACC ← ACC − M[a]</span><span><b>MUL a</b> ACC ← ACC × M[a]</span>
+          <span><b>DIV a</b> ACC ← ACC ÷ M[a]</span><span><b>JMP a</b> PC ← a</span>
+          <span><b>JZ a</b> jump if ZF = 1</span><span><b>JNZ a</b> jump if ZF = 0</span>
+          <span><b>HALT</b> stop CPU</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="main-column">
+      <section class="panel phase-panel">
+        <div class="section-heading">
+          <div><p class="eyebrow">02 / CONTROL UNIT</p><h2>Instruction cycle</h2></div>
+          <div class="cycle-count">Completed cycles <strong id="cycles">0</strong></div>
+        </div>
+        <div class="phase-track">
+          <div class="phase-step active" id="phaseFetch"><span class="phase-number">1</span><div><b>FETCH</b><small>Read instruction</small></div></div>
+          <div class="track-arrow">›</div>
+          <div class="phase-step" id="phaseDecode"><span class="phase-number">2</span><div><b>DECODE</b><small>Interpret opcode</small></div></div>
+          <div class="track-arrow">›</div>
+          <div class="phase-step" id="phaseExecute"><span class="phase-number">3</span><div><b>EXECUTE</b><small>Perform operation</small></div></div>
+        </div>
+        <div class="status-box">
+          <div class="status-icon">◎</div>
+          <div><span class="status-label" id="statusLabel">READY</span><p id="statusMessage">Program loaded. Press Next Phase to begin.</p></div>
+        </div>
+        <div class="button-row controls">
+          <button class="btn btn-primary" id="stepBtn">Next Phase <span>→</span></button>
+          <button class="btn btn-run" id="runBtn">▶ Run program</button>
+          <button class="btn btn-secondary" id="resetBtn">↻ Reset</button>
+        </div>
+      </section>
+
+      <section class="panel datapath-panel">
+        <div class="section-heading"><div><p class="eyebrow">03 / PROCESSOR</p><h2>CPU registers</h2></div><span class="tag">Live values</span></div>
+        <div class="register-grid">
+          <div class="register-card"><span>Program Counter</span><small>PC</small><strong id="regPC">0</strong><em>Next instruction address</em></div>
+          <div class="register-card"><span>Instruction Register</span><small>IR</small><strong class="text-value" id="regIR">—</strong><em>Current instruction</em></div>
+          <div class="register-card"><span>Memory Address Register</span><small>MAR</small><strong id="regMAR">—</strong><em>Address being accessed</em></div>
+          <div class="register-card"><span>Memory Data Register</span><small>MDR</small><strong class="text-value" id="regMDR">—</strong><em>Data being transferred</em></div>
+          <div class="register-card accent-register"><span>Accumulator</span><small>ACC</small><strong id="regACC">0</strong><em>Main arithmetic register</em></div>
+          <div class="register-card flag-card"><span>Zero Flag</span><small>ZF</small><strong id="regZF">1</strong><em>1 if ACC equals zero</em></div>
+        </div>
+        <div class="current-instruction">
+          <div><span class="mini-label">CURRENT INSTRUCTION</span><strong id="currentInstruction">—</strong></div>
+          <span id="cpuStatus" class="cpu-status">READY</span>
+        </div>
+      </section>
+
+      <section class="panel memory-panel">
+        <div class="section-heading"><div><p class="eyebrow">04 / STORAGE</p><h2>Data memory</h2></div><span class="tag">16 locations</span></div>
+        <div class="memory-grid" id="memoryGrid"></div>
+      </section>
+
+      <section class="panel program-panel">
+        <div class="section-heading"><div><p class="eyebrow">05 / EXECUTION TRACE</p><h2>Program memory</h2></div><span class="tag">Address / instruction</span></div>
+        <div class="program-table-wrap">
+          <table><thead><tr><th>Address</th><th>Instruction</th><th>Meaning</th><th>Status</th></tr></thead><tbody id="programRows"></tbody></table>
+        </div>
+      </section>
+    </section>
+  </main>
+  <footer>COA Learning Project · Simplified educational CPU model · Flask + JavaScript</footer>
+  <div id="toast" class="toast" role="alert"></div>
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>
